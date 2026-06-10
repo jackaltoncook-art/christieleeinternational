@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Christie Lee International Airport — Departures</title>
+<meta name="description" content="Live departures from Christie Lee International. Celebrating 40 years of first-class travel.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Oswald:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0d0c0a; --board:#171511; --row:#1d1a15; --row-edge:#0a0908;
+    --flap:#23201a; --flap-hi:#2c2820; --split:rgba(0,0,0,.55);
+    --amber:#f5c168; --amber-dim:#a8854a; --cream:#efe6d4; --cream-dim:#8d8470;
+    --green:#7fd98a; --red:#ff7a6b; --cyan:#8fd5e8; --gold:#ffd98a;
+    --bulb:#ffd98a;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--ink); color:var(--cream); font-family:'Jost',sans-serif;}
+  body{min-height:100vh; display:flex; flex-direction:column; align-items:center; overflow-x:hidden;}
+
+  /* ---------- Marquee sign ---------- */
+  .sign-wrap{width:100%; max-width:1060px; padding:26px 14px 8px;}
+  .sign{
+    position:relative; border:3px solid #3a3326; border-radius:14px;
+    background:linear-gradient(180deg,#211d16,#15120d);
+    padding:26px 18px 20px; text-align:center;
+    box-shadow:0 0 0 3px #0a0908, 0 12px 40px rgba(0,0,0,.6), inset 0 0 60px rgba(0,0,0,.5);
+  }
+  .bulbs{position:absolute; inset:7px; border-radius:9px; pointer-events:none;
+    background-image:radial-gradient(circle 3px, var(--bulb) 0 2px, transparent 3px);
+    background-size:26px 26px; background-position:13px 0;
+    -webkit-mask:linear-gradient(#000 0 0) top/100% 7px no-repeat,
+                 linear-gradient(#000 0 0) bottom/100% 7px no-repeat,
+                 linear-gradient(#000 0 0) left/7px 100% no-repeat,
+                 linear-gradient(#000 0 0) right/7px 100% no-repeat;
+            mask:linear-gradient(#000 0 0) top/100% 7px no-repeat,
+                 linear-gradient(#000 0 0) bottom/100% 7px no-repeat,
+                 linear-gradient(#000 0 0) left/7px 100% no-repeat,
+                 linear-gradient(#000 0 0) right/7px 100% no-repeat;
+    animation:twinkle 2.4s steps(2) infinite;
+    opacity:.9; filter:drop-shadow(0 0 4px rgba(255,217,138,.8));
+  }
+  @keyframes twinkle{50%{background-position:0 0;}}
+  .sign h1{margin:0; font-family:'Oswald',sans-serif; font-weight:600; letter-spacing:.34em;
+    font-size:clamp(17px,4.2vw,40px); color:var(--gold); text-transform:uppercase;
+    text-shadow:0 0 18px rgba(255,217,138,.45), 0 2px 0 #000;}
+  .sign h1 span{color:var(--cream);}
+  .sign .tag{margin:8px 0 0; font-size:clamp(11px,2.2vw,15px); letter-spacing:.42em; text-transform:uppercase; color:var(--amber-dim); font-weight:400;}
+
+  /* ---------- Status strip ---------- */
+  .strip{width:100%; max-width:1060px; padding:10px 14px 4px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .strip .left{display:flex; align-items:baseline; gap:14px;}
+  .strip .dep{font-family:'Oswald',sans-serif; letter-spacing:.3em; font-size:clamp(13px,2.6vw,18px); color:var(--cream); text-transform:uppercase;}
+  .strip .dep::before{content:"▸ "; color:var(--amber);}
+  .clock{font-family:'Oswald',sans-serif; font-size:clamp(13px,2.6vw,18px); letter-spacing:.18em; color:var(--amber);}
+  .controls{display:flex; gap:8px;}
+  .pillbtn{font-family:'Jost',sans-serif; font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    background:#221e17; color:var(--cream-dim); border:1px solid #3a3326; border-radius:999px;
+    padding:7px 14px; cursor:pointer; transition:.15s;}
+  .pillbtn:hover{color:var(--cream); border-color:var(--amber-dim);}
+  .pillbtn.on{color:var(--gold); border-color:var(--amber);}
+
+  /* ---------- The board ---------- */
+  .board-wrap{width:100%; max-width:1060px; padding:8px 10px 16px;}
+  .board{background:var(--board); border:3px solid #0a0908; border-radius:10px; padding:10px 8px;
+    box-shadow:inset 0 0 80px rgba(0,0,0,.65), 0 16px 50px rgba(0,0,0,.55);}
+  .head, .row{display:grid; gap:6px; align-items:center;
+    grid-template-columns:5fr 17fr 7fr 3fr 10fr;}
+  .head{padding:4px 8px 8px; font-size:clamp(9px,1.6vw,12px); letter-spacing:.3em; color:var(--amber-dim); text-transform:uppercase; font-weight:500;}
+  .head .r{text-align:left;}
+  .row{background:linear-gradient(180deg,var(--row),#16130f); border-radius:6px; padding:7px 8px; margin:5px 0;
+    border:1px solid var(--row-edge); cursor:pointer; transition:transform .12s, border-color .12s; position:relative;}
+  .row:hover{transform:translateY(-1px); border-color:#3a3326;}
+  .row:focus-visible{outline:2px solid var(--amber); outline-offset:2px;}
+  .row::after{content:"›"; position:absolute; right:6px; top:50%; transform:translateY(-50%); color:#4a4234; font-size:14px;}
+
+  .cell{display:flex; gap:2px;}
+  .ch{
+    font-family:'Oswald',sans-serif; font-weight:500;
+    width:var(--cw); height:calc(var(--cw)*1.5); line-height:calc(var(--cw)*1.5);
+    font-size:calc(var(--cw)*1.12); text-align:center; flex:0 0 var(--cw);
+    background:linear-gradient(180deg,var(--flap-hi) 0%, var(--flap) 48%, #181510 52%, var(--flap) 100%);
+    border-radius:2px; color:var(--cream); position:relative; overflow:hidden;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05), inset 0 -1px 2px rgba(0,0,0,.5);
+  }
+  .ch::after{content:""; position:absolute; left:0; right:0; top:50%; height:1px; background:var(--split);}
+  .ch.flip{animation:flap .07s linear;}
+  @keyframes flap{0%{transform:scaleY(1)}50%{transform:scaleY(.12)}100%{transform:scaleY(1)}}
+  .c-time .ch{color:var(--cream);}
+  .c-dest .ch{color:var(--amber);}
+  .c-flt .ch, .c-gate .ch{color:var(--cream-dim); font-size:calc(var(--cw)*1.0);}
+  .row[data-status="BOARDING"] .c-status .ch{color:var(--green);}
+  .row[data-status="FINAL CALL"] .c-status .ch{color:var(--red); animation:urgent 1s steps(1) infinite;}
+  .row[data-status="DEPARTED"] .ch{color:var(--cream-dim);}
+  .row[data-status="DEPARTED"] .c-dest .ch{color:var(--amber-dim);}
+  .row[data-status="DELAYED"] .c-status .ch{color:var(--gold);}
+  .row[data-status="CANCELLED"] .c-status .ch{color:var(--red);}
+  .row[data-status="CHECK IN"] .c-status .ch{color:var(--cyan);}
+  .row.showstopper .c-dest .ch{color:var(--gold); text-shadow:0 0 10px rgba(255,217,138,.35);}
+  @keyframes urgent{50%{opacity:.25;}}
+
+  .board-note{text-align:center; font-size:11px; letter-spacing:.26em; text-transform:uppercase; color:#5a5244; padding:10px 4px 2px;}
+
+  /* responsive: flap width derived from viewport so the board always fits.
+     desktop: 42 chars/row + gaps & padding · mobile: 32 chars/row (3 columns) */
+  :root{--cw:clamp(9px, calc((100vw - 190px) / 42), 17px);}
+  @media (max-width:640px){
+    .head, .row{grid-template-columns:5fr 17fr 10fr;}
+    .c-flt,.c-gate,.h-flt,.h-gate{display:none;}
+    :root{--cw:clamp(6.5px, calc((100vw - 140px) / 32), 13px);}
+  }
+
+  /* ---------- PA toast ---------- */
+  .pa{position:fixed; left:50%; bottom:18px; transform:translate(-50%,140%); width:min(640px,92vw);
+    background:#1c1812ee; border:1px solid var(--amber-dim); border-left:5px solid var(--amber);
+    border-radius:10px; padding:13px 16px 13px 14px; z-index:60; backdrop-filter:blur(6px);
+    transition:transform .45s cubic-bezier(.2,.9,.25,1.1); box-shadow:0 12px 40px rgba(0,0,0,.6);}
+  .pa.show{transform:translate(-50%,0);}
+  .pa .who{font-size:10px; letter-spacing:.32em; text-transform:uppercase; color:var(--amber-dim); margin:0 0 4px;}
+  .pa .msg{margin:0; font-size:15px; line-height:1.45; color:var(--cream);}
+
+  /* ---------- Story modal ---------- */
+  .modal{position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center; padding:18px;
+    background:rgba(8,7,5,.78); backdrop-filter:blur(4px);}
+  .modal.open{display:flex;}
+  .card{width:min(560px,100%); max-height:92vh; overflow:auto; background:#f4ecdb; color:#2c261c;
+    border-radius:12px; box-shadow:0 30px 80px rgba(0,0,0,.7); position:relative;
+    border:6px solid #fffdf6; outline:1px solid #d8cdb4;}
+  .card .scene{display:block; width:100%; aspect-ratio:5/3;}
+  .card .body{padding:18px 22px 22px;}
+  .card .route{font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:#9b8c6b; margin:0 0 6px;}
+  .card h2{font-family:'Oswald',sans-serif; font-weight:600; letter-spacing:.06em; text-transform:uppercase; font-size:22px; margin:0 0 10px; color:#3d3014;}
+  .card p.story{margin:0; font-size:15.5px; line-height:1.65;}
+  .card .meta{display:flex; gap:18px; margin-top:16px; padding-top:14px; border-top:1px dashed #cdbf9f;
+    font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:.12em; color:#7a6c4d; text-transform:uppercase;}
+  .closex{position:absolute; top:8px; right:8px; width:34px; height:34px; border-radius:50%;
+    border:none; background:rgba(20,17,12,.55); color:#fff; font-size:17px; cursor:pointer; z-index:2;}
+  .stamp{position:absolute; top:12px; left:12px; z-index:2; font-family:'Oswald',sans-serif; font-size:10px;
+    letter-spacing:.22em; color:#fffdf6cc; border:1.5px solid #fffdf6aa; border-radius:6px; padding:5px 9px;
+    transform:rotate(-6deg); text-transform:uppercase; backdrop-filter:blur(2px); background:rgba(20,17,12,.25);}
+
+  /* ---------- Takeoff overlay ---------- */
+  .takeoff{position:fixed; inset:0; z-index:70; pointer-events:none; overflow:hidden; display:none;}
+  .takeoff.go{display:block;}
+  .jet{position:absolute; left:-180px; bottom:18vh; width:clamp(110px,18vw,200px); 
+    animation:fly 3.1s cubic-bezier(.35,.1,.45,.9) forwards;
+    filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));}
+  @keyframes fly{
+    0%{transform:translate(0,0) rotate(0deg); opacity:0;}
+    8%{opacity:1;}
+    100%{transform:translate(calc(100vw + 360px), calc(-46vh)) rotate(-13deg); opacity:1;}
+  }
+  .contrail{position:absolute; left:0; bottom:calc(18vh + 1.2em); height:3px; width:0; border-radius:3px;
+    background:linear-gradient(90deg, transparent, rgba(244,236,219,.0) 10%, rgba(244,236,219,.55));
+    transform-origin:left bottom; transform:rotate(-13deg); animation:trail 3.1s cubic-bezier(.35,.1,.45,.9) forwards;}
+  @keyframes trail{0%{width:0; opacity:0;} 15%{opacity:.8;} 100%{width:140vw; opacity:0;}}
+
+  canvas.confetti{position:fixed; inset:0; z-index:65; pointer-events:none;}
+
+  footer{padding:6px 16px 26px; font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:#4a4336; text-align:center;}
+  footer a{color:#6b614c; text-decoration:none;}
+  footer a:hover{color:var(--amber);}
+
+  @media (prefers-reduced-motion:reduce){
+    .bulbs{animation:none;}
+    .ch.flip{animation:none;}
+    .row[data-status="FINAL CALL"] .c-status .ch{animation:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="sign-wrap">
+  <div class="sign">
+    <div class="bulbs" aria-hidden="true"></div>
+    <h1>Christie Lee <span>Int'l</span></h1>
+    <p class="tag">Celebrating 40 Years of First-Class Travel</p>
+  </div>
+</div>
+
+<div class="strip">
+  <div class="left">
+    <span class="dep">Departures</span>
+    <span class="clock" id="clock">--:--:--</span>
+  </div>
+  <div class="controls">
+    <button class="pillbtn" id="soundBtn" aria-pressed="false">🔇 Sound off</button>
+  </div>
+</div>
+
+<div class="board-wrap">
+  <div class="board" role="table" aria-label="Departure board">
+    <div class="head" role="row">
+      <div class="r">Time</div><div class="r">Destination</div>
+      <div class="r h-flt">Flight</div><div class="r h-gate">Gate</div><div class="r">Remarks</div>
+    </div>
+    <div id="rows"></div>
+    <p class="board-note">Tap any flight to read its story</p>
+  </div>
+</div>
+
+<footer>
+  Christie Lee International · est. 1986 · <a href="editor.html">ground crew</a>
+</footer>
+
+<div class="pa" id="pa" role="status" aria-live="polite">
+  <p class="who" id="paWho">Christie Lee International — Public Address</p>
+  <p class="msg" id="paMsg"></p>
+</div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="cardTitle">
+  <div class="card">
+    <button class="closex" id="closeModal" aria-label="Close">✕</button>
+    <div class="stamp" id="cardStamp">CLI · Boarding pass</div>
+    <div id="cardScene"></div>
+    <div class="body">
+      <p class="route" id="cardRoute"></p>
+      <h2 id="cardTitle"></h2>
+      <p class="story" id="cardStory"></p>
+      <div class="meta" id="cardMeta"></div>
+    </div>
+  </div>
+</div>
+
+<div class="takeoff" id="takeoff"></div>
+<canvas class="confetti" id="confetti" width="10" height="10" style="display:none"></canvas>
+
+<script src="flights.js"></script>
+<script src="scenes.js"></script>
+<script>
+(function(){
+  "use strict";
+  const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const CHARS = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-–'•.";
+  const WIDTHS = { time:5, dest:17, flt:7, gate:3, status:10 };
+
+  /* ---------- merge editor overrides (device-local) ---------- */
+  let flights = window.FLIGHTS.slice();
+  try{
+    const ov = JSON.parse(localStorage.getItem('clia_overrides_v1') || 'null');
+    if(ov){
+      flights = flights.filter(f => !(ov.removed||[]).includes(f.id));
+      flights = flights.map(f => (ov.edited && ov.edited[f.id]) ? Object.assign({}, f, ov.edited[f.id]) : f);
+      (ov.added||[]).forEach(f => flights.push(f));
+    }
+  }catch(e){ /* storage unavailable — run the stock show */ }
+
+  /* ---------- split-flap cells ---------- */
+  function makeCell(klass, width){
+    const cell = document.createElement('div');
+    cell.className = 'cell ' + klass;
+    cell._spans = [];
+    cell._txt = '';
+    for(let i=0;i<width;i++){
+      const s = document.createElement('span');
+      s.className = 'ch'; s.textContent = ' ';
+      cell.appendChild(s); cell._spans.push(s);
+    }
+    return cell;
+  }
+  function setCell(cell, text, instant){
+    text = (text||'').toUpperCase().slice(0, cell._spans.length).padEnd(cell._spans.length,' ');
+    if(text === cell._txt) return;
+    cell._txt = text;
+    cell._spans.forEach((span, i) => {
+      const target = text[i];
+      if(span.textContent === target) return;
+      if(REDUCED || instant){ span.textContent = target; return; }
+      const startDelay = i * 28;
+      let hops = 4 + Math.floor(Math.random()*5);
+      let idx = CHARS.indexOf(span.textContent); if(idx<0) idx = 0;
+      setTimeout(function step(){
+        span.classList.remove('flip'); void span.offsetWidth; span.classList.add('flip');
+        if(hops-- <= 0 || span.textContent === target){ span.textContent = target; span.classList.remove('flip'); return; }
+        idx = (idx + 1 + Math.floor(Math.random()*3)) % CHARS.length;
+        span.textContent = CHARS[idx];
+        setTimeout(step, 55);
+      }, startDelay);
+    });
+  }
+
+  /* ---------- build rows ---------- */
+  const rowsEl = document.getElementById('rows');
+  const slots = [];
+  for(let i=0;i<flights.length;i++){
+    const row = document.createElement('div');
+    row.className = 'row'; row.setAttribute('role','row'); row.tabIndex = 0;
+    const c = {
+      time: makeCell('c-time', WIDTHS.time),
+      dest: makeCell('c-dest', WIDTHS.dest),
+      flt:  makeCell('c-flt',  WIDTHS.flt),
+      gate: makeCell('c-gate', WIDTHS.gate),
+      status: makeCell('c-status', WIDTHS.status)
+    };
+    row.append(c.time, c.dest, c.flt, c.gate, c.status);
+    row.addEventListener('click', () => { if(row._flight) openStory(row._flight); });
+    row.addEventListener('keydown', e => { if((e.key==='Enter'||e.key===' ') && row._flight){ e.preventDefault(); openStory(row._flight);} });
+    rowsEl.appendChild(row);
+    slots.push({row, c});
+  }
+
+  /* ---------- show engine (wall-clock synced) ---------- */
+  function nextDeparture(f, now){
+    if(f.departMin == null) return null;
+    const d = new Date(now);
+    d.setMinutes(f.departMin, 0, 0);
+    // 3-minute "DEPARTED" window after departure before rolling to next hour
+    if((now - d) / 60000 >= 3) d.setHours(d.getHours()+1);
+    return d;
+  }
+  function statusFor(f, now){
+    if(f.fixedStatus) return f.fixedStatus;
+    const dep = nextDeparture(f, now);
+    const mins = (dep - now) / 60000;
+    if(mins <= 0) return 'DEPARTED';
+    if(mins <= 4) return 'FINAL CALL';
+    if(mins <= 10) return 'BOARDING';
+    if(mins <= 25) return 'CHECK IN';
+    return 'ON TIME';
+  }
+  function fmt(d){ return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+
+  const lastStatus = {};
+  let firstPaint = true;
+
+  function tick(){
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      fmt(now) + ':' + String(now.getSeconds()).padStart(2,'0');
+
+    // order: active flights by next departure, gag flights pinned last
+    const ordered = flights.slice().sort((a,b)=>{
+      const da = a.departMin==null ? Infinity : nextDeparture(a, now) - now;
+      const db = b.departMin==null ? Infinity : nextDeparture(b, now) - now;
+      return da - db;
+    });
+
+    ordered.forEach((f, i) => {
+      if(i >= slots.length) return;
+      const slot = slots[i];
+      const st = statusFor(f, now);
+      const dep = nextDeparture(f, now);
+      slot.row._flight = f;
+      slot.row.dataset.status = st;
+      slot.row.classList.toggle('showstopper', !!f.showstopper);
+      slot.row.setAttribute('aria-label', f.dest + ', flight ' + f.flight + ', ' + st);
+      setCell(slot.c.time, f.departMin==null ? '--:--' : fmt(dep), firstPaint);
+      setCell(slot.c.dest, f.dest, firstPaint);
+      setCell(slot.c.flt, f.flight, firstPaint);
+      setCell(slot.c.gate, f.gate, firstPaint);
+      setCell(slot.c.status, st, firstPaint);
+
+      // transitions → PA + takeoff
+      const prev = lastStatus[f.id];
+      if(prev && prev !== st && !document.hidden){
+        if(st === 'BOARDING' && f.pa && f.pa.boarding) announce(f.pa.boarding);
+        if(st === 'FINAL CALL' && f.pa && f.pa.final) announce(f.pa.final);
+        if(st === 'DEPARTED'){
+          if(f.pa && f.pa.departed) announce(f.pa.departed);
+          launchPlane(!!f.showstopper);
+          if(f.showstopper) confetti();
+        }
+      }
+      lastStatus[f.id] = st;
+    });
+
+    // periodic gag announcements (minute 16 and 41)
+    if(!document.hidden && now.getSeconds() === 0){
+      if(now.getMinutes() === 16){
+        const gag = flights.find(x=>x.id==='cl9999');
+        if(gag && gag.pa && gag.pa.periodic) announce(gag.pa.periodic);
+      }
+      if(now.getMinutes() === 41){
+        const gag = flights.find(x=>x.id==='cl3939');
+        if(gag && gag.pa && gag.pa.periodic) announce(gag.pa.periodic);
+      }
+    }
+    firstPaint = false;
+  }
+  tick();
+  setInterval(tick, 1000);
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) tick(); });
+
+  /* ---------- PA system ---------- */
+  const paEl = document.getElementById('pa'), paMsg = document.getElementById('paMsg');
+  const queue = []; let showing = false;
+  function announce(text){
+    queue.push(text);
+    if(!showing) nextPA();
+  }
+  function nextPA(){
+    if(!queue.length){ showing=false; return; }
+    showing = true;
+    chime();
+    paMsg.textContent = queue.shift();
+    paEl.classList.add('show');
+    setTimeout(()=>{ paEl.classList.remove('show'); setTimeout(nextPA, 600); }, 8500);
+  }
+
+  /* ---------- chime (WebAudio, no files) ---------- */
+  let audioOn = false, ctx = null;
+  const soundBtn = document.getElementById('soundBtn');
+  soundBtn.addEventListener('click', () => {
+    audioOn = !audioOn;
+    if(audioOn && !ctx){ try{ ctx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioOn=false; } }
+    if(ctx && ctx.state==='suspended') ctx.resume();
+    soundBtn.classList.toggle('on', audioOn);
+    soundBtn.setAttribute('aria-pressed', String(audioOn));
+    soundBtn.textContent = audioOn ? '🔔 Sound on' : '🔇 Sound off';
+    if(audioOn) chime();
+  });
+  function tone(freq, t0, dur){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type='sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(.22, t0+.03);
+    g.gain.exponentialRampToValueAtTime(.0001, t0+dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t0); o.stop(t0+dur+.05);
+  }
+  function chime(){
+    if(!audioOn || !ctx) return;
+    const t = ctx.currentTime + .02;
+    tone(659.25, t, .55);       // E5
+    tone(523.25, t+.38, .8);    // C5  — classic two-tone gate chime
+  }
+
+  /* ---------- story modal ---------- */
+  const modal = document.getElementById('modal');
+  function openStory(f){
+    document.getElementById('cardScene').innerHTML = window.SCENES.render(f.scene, f.dest);
+    document.getElementById('cardRoute').textContent = 'CLI → ' + f.dest + '  ·  Flight ' + f.flight;
+    document.getElementById('cardTitle').textContent = f.storyTitle || f.dest;
+    document.getElementById('cardStory').textContent = f.story || '';
+    document.getElementById('cardMeta').innerHTML =
+      '<span>Gate ' + f.gate + '</span><span>' + (f.fixedStatus ? f.fixedStatus : 'Departs :' + String(f.departMin).padStart(2,'0') + ' hourly') + '</span>';
+    modal.classList.add('open');
+    document.getElementById('closeModal').focus();
+  }
+  document.getElementById('closeModal').addEventListener('click', ()=>modal.classList.remove('open'));
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.classList.remove('open'); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') modal.classList.remove('open'); });
+
+  /* ---------- takeoff animation ---------- */
+  const takeoff = document.getElementById('takeoff');
+  function launchPlane(golden){
+    if(REDUCED) return;
+    const body = golden ? '#ffd98a' : '#efe6d4';
+    takeoff.innerHTML =
+      '<div class="contrail"></div>' +
+      '<svg class="jet" viewBox="0 0 200 80" aria-hidden="true">' +
+        '<path d="M8 46 Q60 34 132 34 L168 34 Q190 35 193 41 Q190 47 168 48 L40 52 Q18 52 8 46 Z" fill="'+body+'"/>' +
+        '<path d="M96 36 L70 8 L84 8 L116 35 Z" fill="'+body+'" opacity=".92"/>' +
+        '<path d="M100 49 L84 70 L95 70 L118 50 Z" fill="'+body+'" opacity=".92"/>' +
+        '<path d="M30 47 L16 30 L25 30 L44 46 Z" fill="'+body+'" opacity=".85"/>' +
+        '<circle cx="150" cy="40" r="2.6" fill="#171511"/><circle cx="138" cy="40" r="2.6" fill="#171511"/>' +
+        '<circle cx="126" cy="40" r="2.6" fill="#171511"/><circle cx="114" cy="40" r="2.6" fill="#171511"/>' +
+        '<path d="M168 34 Q190 35 193 41 L165 41 Z" fill="#171511" opacity=".25"/>' +
+      '</svg>';
+    takeoff.classList.add('go');
+    setTimeout(()=>{ takeoff.classList.remove('go'); takeoff.innerHTML=''; }, 3300);
+  }
+
+  /* ---------- confetti for the showstopper ---------- */
+  const cvs = document.getElementById('confetti');
+  function confetti(){
+    if(REDUCED) return;
+    const c = cvs.getContext('2d');
+    cvs.width = innerWidth; cvs.height = innerHeight; cvs.style.display='block';
+    const colors = ['#ffd98a','#f5c168','#efe6d4','#ff7a6b','#8fd5e8'];
+    const parts = Array.from({length:140},()=>({
+      x:Math.random()*cvs.width, y:-20-Math.random()*cvs.height*.4,
+      vy:2+Math.random()*3.5, vx:(Math.random()-.5)*2.4,
+      s:5+Math.random()*6, r:Math.random()*Math.PI, vr:(Math.random()-.5)*.25,
+      col:colors[Math.floor(Math.random()*colors.length)]
+    }));
+    let frames = 0;
+    (function draw(){
+      c.clearRect(0,0,cvs.width,cvs.height);
+      parts.forEach(p=>{
+        p.x+=p.vx; p.y+=p.vy; p.r+=p.vr;
+        c.save(); c.translate(p.x,p.y); c.rotate(p.r);
+        c.fillStyle=p.col; c.fillRect(-p.s/2,-p.s/3,p.s,p.s*.66); c.restore();
+      });
+      if(++frames < 270) requestAnimationFrame(draw);
+      else { cvs.style.display='none'; }
+    })();
+  }
+})();
+</script>
+</body>
+</html>
