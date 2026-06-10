@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLI Ground Crew</title>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Oswald:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#0a0a0a; --panel:#161616; --edge:#2e2e2e; --amber:#ffd25c; --cream:#f2f2ee; --dim:#8d8d86; --red:#ff6b5e; --green:#8fd98a;}
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--ink); color:var(--cream); font-family:'Jost',sans-serif; display:flex; flex-direction:column; align-items:center; min-height:100vh;}
+  .wrap{width:min(680px,94vw); padding:26px 0 56px;}
+  h1{font-family:'Oswald',sans-serif; letter-spacing:.28em; text-transform:uppercase; font-size:20px; color:var(--amber); margin:14px 0 0;}
+  h2{font-family:'Oswald',sans-serif; letter-spacing:.22em; text-transform:uppercase; font-size:14px; color:var(--cream); margin:34px 0 4px;}
+  .sub{font-size:12px; letter-spacing:.22em; text-transform:uppercase; color:var(--dim); margin:6px 0 4px;}
+  .note{font-size:13px; color:var(--dim); line-height:1.55; margin:8px 0 14px;}
+  .note b{color:var(--cream); font-weight:500;}
+  a.back{color:var(--dim); font-size:12px; letter-spacing:.18em; text-transform:uppercase; text-decoration:none;}
+  a.back:hover{color:var(--amber);}
+
+  .panel{background:var(--panel); border:1px solid #0a0908; border-radius:10px; padding:16px; display:grid; gap:12px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .field{display:flex; flex-direction:column; gap:4px;}
+  label{font-size:10px; letter-spacing:.24em; text-transform:uppercase; color:var(--dim);}
+  input,select,textarea{background:#14110d; border:1px solid var(--edge); color:var(--cream); border-radius:7px; padding:10px 11px;
+    font-family:'Jost',sans-serif; font-size:15px; width:100%;}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--amber); outline-offset:1px; border-color:transparent;}
+  textarea{resize:vertical; min-height:74px; line-height:1.5;}
+  button{font-family:'Jost',sans-serif; font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    background:#221e17; color:var(--cream); border:1px solid var(--edge); border-radius:999px; padding:10px 18px; cursor:pointer;}
+  button:hover{border-color:var(--amber);}
+  button.primary{color:#171511; background:var(--amber); border-color:var(--amber); font-weight:600;}
+  button.danger{color:var(--red);}
+  .presets{display:flex; flex-wrap:wrap; gap:8px;}
+  .presets button{font-size:11px; padding:8px 13px; color:var(--dim);}
+  .presets button:hover{color:var(--cream);}
+  .flash{font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--green); opacity:0; transition:opacity .3s; min-height:16px;}
+  .flash.show{opacity:1;}
+  .added-list{font-size:13px; color:var(--dim); line-height:1.7;}
+  .added-list b{color:var(--amber); font-weight:500;}
+  @media (max-width:520px){ .grid2{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">‹ Back to departures</a>
+  <h1>Ground Crew Operations</h1>
+  <p class="sub">Christie Lee International</p>
+  <p class="note">
+    Keep the <b>departure board open in another tab on this same device</b> (the one driving the
+    big screen, with announcements switched on). Announcements you make here play there, out loud,
+    within a second or two.
+  </p>
+
+  <h2>📣 Make an announcement</h2>
+  <p class="note">One tap on a preset, or write your own. Pick who says it.</p>
+  <div class="panel">
+    <div class="presets">
+      <button data-say="Attention travelers: a wallet has been found at the T S A checkpoint containing seventeen loyalty cards and one expired coupon. The owner may claim it at the security office.">Lost wallet at TSA</button>
+      <button data-say="May I have your attention please. The cake is now boarding in the main terminal. The cake is now boarding. This is not a drill.">Cake is boarding</button>
+      <button data-say="Now arriving at gate 40: the birthday girl. All guests please direct your attention, and your applause, to the birthday girl.">Birthday girl arriving</button>
+      <button data-say="Final boarding call for the dance floor. The dance floor is now fully open, and attendance is mandatory.">Dance floor final call</button>
+      <button data-say="A gentle reminder from Christie Lee International: the photo booth is experiencing high demand. Travelers are encouraged to strike their poses efficiently.">Photo booth update</button>
+      <button data-say="Christie Lee International has a very special announcement. On behalf of every gate agent, every pilot, and every split-flap letter on our boards — happy 40th birthday, Christie. Forty has never looked so first class.">Birthday message</button>
+    </div>
+    <div class="field">
+      <label for="annText">Custom announcement</label>
+      <textarea id="annText" placeholder="May I have your attention please…"></textarea>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label for="annVoice">Announcer</label>
+        <select id="annVoice">
+          <option value="0">Gate agent — Terminal A</option>
+          <option value="1">Gate agent — Terminal B</option>
+          <option value="2" selected>Duty manager</option>
+          <option value="3">Roving announcer</option>
+        </select>
+      </div>
+      <div class="field" style="justify-content:flex-end;">
+        <button class="primary" id="annBtn">Announce on the board now</button>
+      </div>
+    </div>
+    <p class="flash" id="annFlash">Sent to the board ✓</p>
+  </div>
+
+  <h2>🧍 Page a passenger</h2>
+  <div class="panel">
+    <div class="grid2">
+      <div class="field"><label for="pgName">Name</label><input id="pgName" placeholder="Christie Lee"></div>
+      <div class="field"><label for="pgLoc">Report to</label><input id="pgLoc" placeholder="the dance floor" value="the dance floor"></div>
+    </div>
+    <div><button class="primary" id="pgBtn">Page them</button></div>
+    <p class="flash" id="pgFlash">Paging now ✓</p>
+  </div>
+
+  <h2>✈️ Add a flight to the board</h2>
+  <p class="note">New flights join the hourly cycle on this device's board: check-in at 25 minutes out,
+    boarding at 10, final call at 4, departure on the minute you pick. Announcements are generated
+    automatically in the formal CLI house style, flying under the <b>Captain Air</b> banner.</p>
+  <div class="panel">
+    <div class="grid2">
+      <div class="field"><label for="nfDest">Destination</label><input id="nfDest" maxlength="16" placeholder="SHANGRI-LA"></div>
+      <div class="field"><label for="nfFlt">Flight no.</label><input id="nfFlt" maxlength="7" placeholder="CA-040"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="nfGate">Gate</label><input id="nfGate" maxlength="3" placeholder="C4"></div>
+      <div class="field"><label for="nfMin">Departs at minute (each hour, 0–59)</label><input id="nfMin" type="number" min="0" max="59" placeholder="45"></div>
+    </div>
+    <div class="field">
+      <label for="nfStory">Story (optional — shown when guests tap the flight)</label>
+      <textarea id="nfStory" placeholder="A late addition to tonight's schedule, filed with great love and questionable paperwork."></textarea>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button class="primary" id="nfBtn">Add flight</button>
+      <button class="danger" id="resetBtn">Remove all added flights</button>
+    </div>
+    <p class="flash" id="nfFlash">Added — refresh the board tab ✓</p>
+    <p class="added-list" id="addedList"></p>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const KEY_OV = 'clia_overrides_v1';
+  const KEY_LIVE = 'clia_live_announcement';
+
+  function flash(id){
+    const el = document.getElementById(id);
+    el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 2400);
+  }
+  function send(text, announcer){
+    try{
+      localStorage.setItem(KEY_LIVE, JSON.stringify({ text, announcer: Number(announcer), ts: Date.now() }));
+      return true;
+    }catch(e){ alert('Could not reach the board — storage unavailable in this browser.'); return false; }
+  }
+  const voiceSel = document.getElementById('annVoice');
+
+  /* presets */
+  document.querySelectorAll('.presets button').forEach(b => {
+    b.addEventListener('click', () => { if(send(b.dataset.say, voiceSel.value)) flash('annFlash'); });
+  });
+
+  /* custom announcement */
+  document.getElementById('annBtn').addEventListener('click', () => {
+    const t = document.getElementById('annText').value.trim();
+    if(!t) return;
+    if(send(t, voiceSel.value)){ flash('annFlash'); document.getElementById('annText').value=''; }
+  });
+
+  /* page a passenger */
+  document.getElementById('pgBtn').addEventListener('click', () => {
+    const name = document.getElementById('pgName').value.trim();
+    if(!name) return;
+    const loc = document.getElementById('pgLoc').value.trim() || 'the information desk';
+    const text = 'Attention please. Paging passenger ' + name + '. ' + name + ', please report to ' + loc + ' immediately. ' + name + ', to ' + loc + '. Thank you.';
+    if(send(text, 1)) flash('pgFlash');
+  });
+
+  /* add a flight */
+  function readOv(){
+    try{ return Object.assign({added:[]}, JSON.parse(localStorage.getItem(KEY_OV) || '{}')); }
+    catch(e){ return {added:[]}; }
+  }
+  function listAdded(){
+    const ov = readOv();
+    document.getElementById('addedList').innerHTML = ov.added.length
+      ? 'On the board: ' + ov.added.map(f => '<b>' + f.flight + '</b> to ' + f.dest + ' (:' + String(f.departMin).padStart(2,'0') + ')').join(' · ')
+      : '';
+  }
+  document.getElementById('nfBtn').addEventListener('click', () => {
+    const dest = document.getElementById('nfDest').value.toUpperCase().trim();
+    if(!dest) return;
+    const ov = readOv();
+    ov.added.push({
+      id: 'custom-' + Date.now(),
+      flight: (document.getElementById('nfFlt').value.toUpperCase().trim() || 'CA-040'),
+      dest,
+      gate: (document.getElementById('nfGate').value.toUpperCase().trim() || 'C4'),
+      departMin: Math.max(0, Math.min(59, parseInt(document.getElementById('nfMin').value || '45', 10) || 45)),
+      scene: 'default',
+      storyTitle: 'A late addition',
+      story: document.getElementById('nfStory').value.trim() ||
+        'A late addition to tonight\u2019s schedule, filed by the ground crew with great love and questionable paperwork.'
+    });
+    try{
+      localStorage.setItem(KEY_OV, JSON.stringify(ov));
+      flash('nfFlash'); listAdded();
+      document.getElementById('nfDest').value=''; document.getElementById('nfStory').value='';
+    }catch(e){ alert('Could not save — storage unavailable in this browser.'); }
+  });
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if(!confirm('Remove all ground-crew flights from this device\u2019s board?')) return;
+    try{ localStorage.removeItem(KEY_OV); }catch(e){}
+    listAdded();
+  });
+  listAdded();
+})();
+</script>
+</body>
+</html>
